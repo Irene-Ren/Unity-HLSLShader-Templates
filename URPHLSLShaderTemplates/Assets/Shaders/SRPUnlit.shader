@@ -38,8 +38,7 @@
  
              #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
  
-             TEXTURE2D(_BaseMap);
-             SAMPLER(sampler_BaseMap);
+             TEXTURE2D(_BaseMap);             SAMPLER(sampler_BaseMap);
  
              CBUFFER_START(UnityPerMaterial)
                  half4 _BaseColor;
@@ -48,8 +47,31 @@
  
              #ifdef UNITY_DOTS_INSTANCING_ENABLED
                  UNITY_INSTANCING_BUFFER_START(MaterialPropertyMetadata)
-                     UNITY_DOTS_INSTANCED_PROP(half4, _BaseColor)
+                     UNITY_DOTS_INSTANCED_PROP(float4, _BaseColor)
                  UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
+
+                // Simple way to access instanced properties in shaders, if no property set found, it will use the default value
+                //  #define _BaseColor UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _BaseColor)
+                // But, We do not use this since it can cause the compiler to regenerate the property loading code for each use of _BaseColor.
+
+                // To avoid this, the property loads are cached in some static values at the beginning of the shader.
+                // The properties such as _BaseColor are then overridden so that it expand directly to the static value like this:
+                // #define _BaseColor unity_DOTS_Sampled_BaseColor
+                //
+                // This simple fix happened to improve GPU performances by ~10% on Meta Quest 2 with URP on some scenes.
+                 
+                static float4 unity_DOTS_Sampled_BaseColor;
+
+                void SetupDOTSLitMaterialPropertyCaches()
+                {
+                    // Still, in Unity6000.0.32f1, UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT only takes floats not halfs, so shader can only use float
+                    unity_DOTS_Sampled_BaseColor            = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _BaseColor);
+                }
+
+                #undef UNITY_SETUP_DOTS_MATERIAL_PROPERTY_CACHES
+                #define UNITY_SETUP_DOTS_MATERIAL_PROPERTY_CACHES() SetupDOTSLitMaterialPropertyCaches()
+                
+                #define _BaseColor              unity_DOTS_Sampled_BaseColor
              #endif
              
  
