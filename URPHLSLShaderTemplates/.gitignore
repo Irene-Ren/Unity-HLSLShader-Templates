@@ -74,3 +74,16 @@ crashlytics-build.properties
 
 /[Aa]ssets/[Ss]amples.meta
 /[Aa]ssets/Samples/*
+
+/[Aa]ssets/TextMesh Pro.meta
+/[Aa]ssets/TextMesh Pro/*
+
+BUILD/*
+IOSBUILD/*
+IOSBUILD2/*
+PCBUILD/*
+
+/.idea/*
+
+/.utmp/*
+
